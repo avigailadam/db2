@@ -1,5 +1,5 @@
 import unittest
-import Solution as Solution
+import Solution
 
 
 class AbstractTest(unittest.TestCase):
