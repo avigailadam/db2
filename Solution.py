@@ -215,16 +215,14 @@ def addStudio(studio: Studio) -> ReturnValue:
 
 def deleteCritic(critic_id: int) -> ReturnValue:
     conn = None
-    rows_effected = 0
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL("DELETE FROM Critics WHERE id={0}").format(sql.Literal(critic_id))
-        rows_effected, _ = conn.execute(query)
+        sql.SQL(f"DELETE FROM Critics WHERE id={sql.Literal(critic_id)}")
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
         conn.close()
-    return rows_effected
+    return ReturnValue.OK
 
 
 def getCriticProfile(critic_id: int) -> Critic:
@@ -234,16 +232,14 @@ def getCriticProfile(critic_id: int) -> Critic:
 
 def deleteActor(actor_id: int) -> ReturnValue:
     conn = None
-    rows_effected = 0
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL("DELETE FROM Actors WHERE id={0}").format(sql.Literal(actor_id))
-        rows_effected, _ = conn.execute(query)
+        sql.SQL(f"DELETE FROM Actors WHERE id={sql.Literal(actor_id)}")
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
         conn.close()
-    return rows_effected
+    return ReturnValue.OK
 
 
 def getActorProfile(actor_id: int) -> Actor:
@@ -289,18 +285,16 @@ def catchException(e: Exception, conn: Any) -> ReturnValue:
 
 
 def deleteMovie(movie_name: str, year: int) -> ReturnValue:
-    # conn = None
-    # rows_effected = 0
-    # try:
-    #     conn = Connector.DBConnector()
-    #     query = sql.SQL("DELETE FROM Movies WHERE id={0}").format(sql.Literal(actor_id))
-    #     rows_effected, _ = conn.execute(query)
-    # except Exception as e:
-    #     catchException(e, conn)
-    # if conn is not None:
-    #     conn.close()
-    # return rows_effected
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        sql.SQL(
+            f"DELETE FROM Movies WHERE name={sql.Literal(movie_name)} AND year={sql.Literal(year)}")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+    return ReturnValue.OK
 
 
 def getMovieProfile(movie_name: str, year: int) -> Movie:
@@ -309,8 +303,16 @@ def getMovieProfile(movie_name: str, year: int) -> Movie:
 
 
 def deleteStudio(studio_id: int) -> ReturnValue:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        sql.SQL(
+            f"DELETE FROM Movies WHERE if={sql.Literal(studio_id)}")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+    return ReturnValue.OK
 
 
 def getStudioProfile(studio_id: int) -> Studio:
@@ -336,8 +338,17 @@ def criticRatedMovie(movieName: str, movieYear: int, criticID: int, rating: int)
 
 
 def criticDidntRateMovie(movieName: str, movieYear: int, criticID: int) -> ReturnValue:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        sql.SQL(
+            f"DELETE FROM CriticsMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND critic_id={criticID}")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+    return ReturnValue.OK
 
 
 def actorPlayedInMovie(movieName: str, movieYear: int, actorID: int, salary: int, roles: List[str]) -> ReturnValue:
@@ -358,8 +369,17 @@ def actorPlayedInMovie(movieName: str, movieYear: int, actorID: int, salary: int
 
 
 def actorDidntPlayeInMovie(movieName: str, movieYear: int, actorID: int) -> ReturnValue:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        sql.SQL(
+            f"DELETE FROM ActoresMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND actor_id={actorID}")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+    return ReturnValue.OK
 
 
 def studioProducedMovie(studioID: int, movieName: str, movieYear: int, budget: int, revenue: int) -> ReturnValue:
@@ -380,8 +400,17 @@ def studioProducedMovie(studioID: int, movieName: str, movieYear: int, budget: i
 
 
 def studioDidntProduceMovie(studioID: int, movieName: str, movieYear: int) -> ReturnValue:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        sql.SQL(
+            f"DELETE FROM StudiosMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND studio_id={studioID}")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+    return ReturnValue.OK
 
 
 # ---------------------------------- BASIC API: ----------------------------------
