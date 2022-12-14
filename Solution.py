@@ -226,8 +226,15 @@ def deleteCritic(critic_id: int) -> ReturnValue:
 
 
 def getCriticProfile(critic_id: int) -> Critic:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        query = sql.SQL(f"SELECT FROM Critics WHERE id={critic_id}").format(sql.Literal(critic_id))
+        return query
+        # rows_effected is the number of rows received by the SELECT
+    except Exception as e:
+        catchException(e, conn)
+        return None
 
 
 def deleteActor(actor_id: int) -> ReturnValue:
@@ -549,3 +556,5 @@ if __name__ == '__main__':
     print('studios:')
     getStudios(printSchema=True)
     criticRatedMovie("Best Movie", 2000, 1, 5)
+    Critic = getCriticProfile(1)
+    print(Critic)
