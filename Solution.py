@@ -168,10 +168,9 @@ def addCritic(critic: Critic) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO Critics(id, name) VALUES({id}, {username})").format(
-            id=sql.Literal(critic.getCriticID()), username=sql.Literal(critic.getName()))
-        rows_effected, _ = conn.execute(query)
+        conn.execute(
+            sql.SQL("INSERT INTO Critics(id, name) VALUES({id}, {username})").format(
+            id=sql.Literal(critic.getCriticID()), username=sql.Literal(critic.getName())))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -183,13 +182,13 @@ def addActor(actor: Actor) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO Actors(id, name, age, height) VALUES({id}, {name}, {age}, {height})").format(
+        conn.execute(
+            sql.SQL("INSERT INTO Actors(id, name, age, height) VALUES("
+                    "{id}, {name}, {age}, {height})").format(
             id=sql.Literal(actor.getActorID()),
             name=sql.Literal(actor.getActorName()),
             age=sql.Literal(actor.getAge()),
-            height=sql.Literal(actor.getHeight()))
-        rows_effected, _ = conn.execute(query)
+            height=sql.Literal(actor.getHeight())))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -201,11 +200,10 @@ def addStudio(studio: Studio) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO Studios(id, name) VALUES({id}, {name})").format(
+        conn.execute(
+            sql.SQL("INSERT INTO Studios(id, name) VALUES({id}, {name})").format(
             id=sql.Literal(studio.getStudioID()),
-            name=sql.Literal(studio.getStudioName()))
-        rows_effected, _ = conn.execute(query)
+            name=sql.Literal(studio.getStudioName())))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -217,7 +215,7 @@ def deleteCritic(critic_id: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(f"DELETE FROM Critics WHERE id={sql.Literal(critic_id)}")
+        conn.execute(sql.SQL(f"DELETE FROM Critics WHERE id={sql.Literal(critic_id)}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -229,9 +227,8 @@ def getCriticProfile(critic_id: int) -> Critic:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(f"SELECT FROM Critics WHERE id={critic_id}").format(sql.Literal(critic_id))
-        return query
-        # rows_effected is the number of rows received by the SELECT
+        _, (name) = conn.execute(sql.SQL(f"SELECT name FROM Critics WHERE id={critic_id}"))
+        return Critic(critic_id, name)
     except Exception as e:
         catchException(e, conn)
         return None
@@ -241,7 +238,7 @@ def deleteActor(actor_id: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(f"DELETE FROM Actors WHERE id={sql.Literal(actor_id)}")
+        conn.execute(sql.SQL(f"DELETE FROM Actors WHERE id={sql.Literal(actor_id)}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -250,19 +247,24 @@ def deleteActor(actor_id: int) -> ReturnValue:
 
 
 def getActorProfile(actor_id: int) -> Actor:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        _, (name, age, height) = conn.execute(sql.SQL(f"SELECT name, age, height FROM Critics WHERE id={actor_id}"))
+        return Actor(actor_id, name, age, height)
+    except Exception as e:
+        catchException(e, conn)
+        return None
 
 
 def addMovie(movie: Movie) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO Movies(name, year, genere) VALUES({name}, {year}, {genere})").format(
+        conn.execute(
+            sql.SQL("INSERT INTO Movies(name, year, genere) VALUES({name}, {year}, {genere})").format(
             name=sql.Literal(movie.getMovieName()), year=sql.Literal(movie.getYear()),
-            genere=sql.Literal(movie.getGenre()))
-        rows_effected, _ = conn.execute(query)
+            genere=sql.Literal(movie.getGenre())))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -295,8 +297,8 @@ def deleteMovie(movie_name: str, year: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(
-            f"DELETE FROM Movies WHERE name={sql.Literal(movie_name)} AND year={sql.Literal(year)}")
+        conn.execute(
+            sql.SQL(f"DELETE FROM Movies WHERE name={sql.Literal(movie_name)} AND year={sql.Literal(year)}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -305,16 +307,22 @@ def deleteMovie(movie_name: str, year: int) -> ReturnValue:
 
 
 def getMovieProfile(movie_name: str, year: int) -> Movie:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        _, (genere) = conn.execute(sql.SQL(f"SELECT genere FROM Critics WHERE name={movie_name} AND year={year}"))
+        return Movie(movie_name, year, genere)
+    except Exception as e:
+        catchException(e, conn)
+        return None
 
 
 def deleteStudio(studio_id: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(
-            f"DELETE FROM Movies WHERE if={sql.Literal(studio_id)}")
+        conn.execute(
+            sql.SQL(f"DELETE FROM Movies WHERE if={sql.Literal(studio_id)}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -323,20 +331,25 @@ def deleteStudio(studio_id: int) -> ReturnValue:
 
 
 def getStudioProfile(studio_id: int) -> Studio:
-    # TODO: implement
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        _, (name) = conn.execute(sql.SQL(f"SELECT name FROM Studios WHERE id={studio_id}"))
+        return Studio(studio_id, name)
+    except Exception as e:
+        catchException(e, conn)
+        return None
 
 
 def criticRatedMovie(movieName: str, movieYear: int, criticID: int, rating: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO CriticsMovie(critic_id, movie_name, movie_year, rating) VALUES("
+        conn.execute(
+            sql.SQL("INSERT INTO CriticsMovie(critic_id, movie_name, movie_year, rating) VALUES("
             "{id}, {name}, {year}, {rating})").format(
             id=sql.Literal(criticID), name=sql.Literal(movieName),
-            year=sql.Literal(movieYear), rating=sql.Literal(rating))
-        rows_effected, _ = conn.execute(query)
+            year=sql.Literal(movieYear), rating=sql.Literal(rating)))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -348,9 +361,9 @@ def criticDidntRateMovie(movieName: str, movieYear: int, criticID: int) -> Retur
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(
-            f"DELETE FROM CriticsMovie WHERE movie_name={sql.Literal(movieName)} AND "
-            f"movie_year={sql.Literal(movieYear)} AND critic_id={criticID}")
+        conn.execute(
+            sql.SQL(f"DELETE FROM CriticsMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND critic_id={criticID}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -362,12 +375,11 @@ def actorPlayedInMovie(movieName: str, movieYear: int, actorID: int, salary: int
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO CriticsMovie(actor_id, movie_name, movie_year, salary, roles) VALUES("
+        conn.execute(
+            sql.SQL("INSERT INTO CriticsMovie(actor_id, movie_name, movie_year, salary, roles) VALUES("
             "{id}, {name}, {year}, {salary}, {roles})").format(
             id=sql.Literal(actorID), name=sql.Literal(movieName), year=sql.Literal(movieYear),
-            rating=sql.Literal(salary), roles=sql.Literal(roles))
-        rows_effected, _ = conn.execute(query)
+            rating=sql.Literal(salary), roles=sql.Literal(roles)))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -379,9 +391,9 @@ def actorDidntPlayeInMovie(movieName: str, movieYear: int, actorID: int) -> Retu
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(
-            f"DELETE FROM ActoresMovie WHERE movie_name={sql.Literal(movieName)} AND "
-            f"movie_year={sql.Literal(movieYear)} AND actor_id={actorID}")
+        conn.execute(
+            sql.SQL(f"DELETE FROM ActoresMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND actor_id={actorID}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -393,12 +405,11 @@ def studioProducedMovie(studioID: int, movieName: str, movieYear: int, budget: i
     conn = None
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(
-            "INSERT INTO CriticsMovie(studio_id, movie_name, movie_year, budget, revenue) VALUES("
+        conn.execute(
+            sql.SQL("INSERT INTO CriticsMovie(studio_id, movie_name, movie_year, budget, revenue) VALUES("
             "{id}, {name}, {year}, {budget}, {revenue})").format(
             id=sql.Literal(studioID), name=sql.Literal(movieName), year=sql.Literal(movieYear),
-            budget=sql.Literal(budget), revenue=sql.Literal(revenue))
-        rows_effected, _ = conn.execute(query)
+            budget=sql.Literal(budget), revenue=sql.Literal(revenue)))
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -410,9 +421,9 @@ def studioDidntProduceMovie(studioID: int, movieName: str, movieYear: int) -> Re
     conn = None
     try:
         conn = Connector.DBConnector()
-        sql.SQL(
-            f"DELETE FROM StudiosMovie WHERE movie_name={sql.Literal(movieName)} AND "
-            f"movie_year={sql.Literal(movieYear)} AND studio_id={studioID}")
+        conn.execute(
+            sql.SQL(f"DELETE FROM StudiosMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND studio_id={studioID}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -476,11 +487,10 @@ def getExclusiveActors() -> List[Tuple[int, int]]:
 
 def getMovies(printSchema: bool = False):
     conn = None
-    rows_effected, result = 0, Connector.ResultSet()
+    Connector.ResultSet()
     try:
         conn = Connector.DBConnector()
-        rows_effected, result = conn.execute("SELECT * FROM Movies", printSchema=printSchema)
-        # rows_effected is the number of rows received by the SELECT
+        conn.execute("SELECT * FROM Movies", printSchema=printSchema)
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -490,11 +500,10 @@ def getMovies(printSchema: bool = False):
 
 def getActors(printSchema: bool = False):
     conn = None
-    rows_effected, result = 0, Connector.ResultSet()
+    Connector.ResultSet()
     try:
         conn = Connector.DBConnector()
-        rows_effected, result = conn.execute("SELECT * FROM Actors", printSchema=printSchema)
-        # rows_effected is the number of rows received by the SELECT
+        conn.execute("SELECT * FROM Actors", printSchema=printSchema)
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -504,11 +513,10 @@ def getActors(printSchema: bool = False):
 
 def getStudios(printSchema: bool = False):
     conn = None
-    rows_effected, result = 0, Connector.ResultSet()
+    Connector.ResultSet()
     try:
         conn = Connector.DBConnector()
-        rows_effected, result = conn.execute("SELECT * FROM Studios", printSchema=printSchema)
-        # rows_effected is the number of rows received by the SELECT
+        conn.execute("SELECT * FROM Studios", printSchema=printSchema)
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -518,11 +526,10 @@ def getStudios(printSchema: bool = False):
 
 def getCritics(printSchema: bool = False):
     conn = None
-    rows_effected, result = 0, Connector.ResultSet()
+    Connector.ResultSet()
     try:
         conn = Connector.DBConnector()
-        rows_effected, result = conn.execute("SELECT * FROM Critics", printSchema=printSchema)
-        # rows_effected is the number of rows received by the SELECT
+        conn.execute("SELECT * FROM Critics", printSchema=printSchema)
     except Exception as e:
         return catchException(e, conn)
     if conn is not None:
@@ -556,5 +563,5 @@ if __name__ == '__main__':
     print('studios:')
     getStudios(printSchema=True)
     criticRatedMovie("Best Movie", 2000, 1, 5)
-    Critic = getCriticProfile(1)
-    print(Critic)
+    # Critic = getCriticProfile(1)
+    # print(Critic)
