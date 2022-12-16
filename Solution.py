@@ -43,8 +43,8 @@ def createTables():
             "movie_name TEXT NOT NULL,"
             "movie_year INTEGER,"
             "rating INTEGER NOT NULL,"
-            "FOREIGN KEY (critic_id) REFERENCES Critics(id) ON DELETE CASCADE,"
-            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year) ON DELETE CASCADE)"
+            "FOREIGN KEY (critic_id) REFERENCES Critics(id),"
+            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year))"
         )
         conn.execute(
             "CREATE TABLE StudiosMovie("
@@ -53,8 +53,8 @@ def createTables():
             "movie_year INTEGER,"
             "budget INTEGER NOT NULL,"
             "revenue INTEGER NOT NULL,"
-            "FOREIGN KEY (studio_id) REFERENCES Studios(id) ON DELETE CASCADE,"
-            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year) ON DELETE CASCADE )"
+            "FOREIGN KEY (studio_id) REFERENCES Studio(id),"
+            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year))"
         )
         conn.execute(
             "CREATE TABLE ActorsMovie("
@@ -62,8 +62,9 @@ def createTables():
             "movie_name TEXT NOT NULL,"
             "movie_year INTEGER,"
             "salary INTEGER NOT NULL,"
-            "FOREIGN KEY (actor_id) REFERENCES Actors(id) ON DELETE CASCADE,"
-            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year) ON DELETE CASCADE)"
+            "roles LIST(TEXT NOT NULL)"
+            "FOREIGN KEY (actor_id) REFERENCES Actors(id),"
+            "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year))"
         )
     except Exception as e:
         catchException(e, conn)
@@ -214,7 +215,7 @@ def deleteCritic(critic_id: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
-        conn.execute(sql.SQL("DELETE FROM Critics WHERE id={c_id}".format(c_id=critic_id)))
+        conn.execute(sql.SQL(f"DELETE FROM Critics WHERE id={sql.Literal(critic_id)}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -399,12 +400,13 @@ def actorDidntPlayeInMovie(movieName: str, movieYear: int, actorID: int) -> Retu
         conn.close()
     return ReturnValue.OK
 
+
 def studioProducedMovie(studioID: int, movieName: str, movieYear: int, budget: int, revenue: int) -> ReturnValue:
     conn = None
     try:
         conn = Connector.DBConnector()
         conn.execute(
-            sql.SQL("INSERT INTO StudiosMovie(studio_id, movie_name, movie_year, budget, revenue) VALUES("
+            sql.SQL("INSERT INTO CriticsMovie(studio_id, movie_name, movie_year, budget, revenue) VALUES("
             "{id}, {name}, {year}, {budget}, {revenue})").format(
             id=sql.Literal(studioID), name=sql.Literal(movieName), year=sql.Literal(movieYear),
             budget=sql.Literal(budget), revenue=sql.Literal(revenue)))
@@ -419,10 +421,9 @@ def studioDidntProduceMovie(studioID: int, movieName: str, movieYear: int) -> Re
     conn = None
     try:
         conn = Connector.DBConnector()
-        quer = "DELETE FROM StudiosMovie WHERE (movie_name='{m_name}' and movie_year={m_year} and studio_id={s_id})"\
-            .format(m_name=str(movieName), m_year=movieYear, s_id=studioID)
-        conn.execute(sql.SQL(quer))
-
+        conn.execute(
+            sql.SQL(f"DELETE FROM StudiosMovie WHERE movie_name={sql.Literal(movieName)} AND "
+            f"movie_year={sql.Literal(movieYear)} AND studio_id={studioID}"))
     except Exception as e:
         catchException(e, conn)
     if conn is not None:
@@ -432,41 +433,13 @@ def studioDidntProduceMovie(studioID: int, movieName: str, movieYear: int) -> Re
 
 # ---------------------------------- BASIC API: ----------------------------------
 def averageRating(movieName: str, movieYear: int) -> float:
-    conn = None
-    try:
-        conn = Connector.DBConnector()
-        quer = "SELECT avg(rating) FROM criticsmovie WHERE movie_name='{m_name}' AND movie_year={m_year}"\
-            .format(m_name=movieName, m_year=movieYear)
-        _, (aver) = conn.execute(sql.SQL(quer))
-
-        # select avg(rating), year, name from
-        # movies inner join criticsmovie
-        # ON (year=movie_year and name=movie_name)
-        # group by year, name
-
-
-        return aver
-    except Exception as e:
-        catchException(e, conn)
-        return None
+    # TODO: implement
+    pass
 
 
 def averageActorRating(actorID: int) -> float:
-    conn = None
-    try:
-        conn = Connector.DBConnector()
-        quer = "select avg(rating) from actorsmovie join criticsmovie " \
-               "ON (actorsmovie.movie_year=criticsmovie.movie_year " \
-               "and actorsmovie.movie_name=criticsmovie.movie_name) " \
-               "group by criticsmovie.movie_year, criticsmovie.movie_name, actor_id " \
-               "HAVING actor_id={a_id}" \
-            .format(a_id=actorID)
-        _, (aver) = conn.execute(sql.SQL(quer))
-
-        return aver
-    except Exception as e:
-        catchException(e, conn)
-        return None
+    # TODO: implement
+    pass
 
 
 def bestPerformance(actor_id: int) -> Movie:
@@ -568,37 +541,19 @@ def getCritics(printSchema: bool = False):
 if __name__ == '__main__':
     dropTables()
     createTables()
-
     addCritic(Critic(1, "Moshe"))
     addCritic(Critic(2, "Yagel"))
     addCritic(Critic(3, "Avigail"))
-    deleteCritic(1)
-    addCritic(Critic(1, "new_Moshe"))
-
-
-
     addMovie(Movie("Best Movie", 2000, 'Action'))
     addMovie(Movie("Worst Movie", 1990, 'Horror'))
     addMovie(Movie("Ok Movie", 2005, 'Comedy'))
-
-
     addActor(Actor(1, "Hilbert", 4, 8))
     addActor(Actor(8, "So-Yang", 16, 5))
     addActor(Actor(45, "Luna", 70, 6))
     addActor(Actor(13, "Miley", 13, 9))
     addActor(Actor(2, "Gon", 34, 1))
-
-
-    addStudio(Studio(1, "Yag"))
     addStudio(Studio(5, "Baloo"))
     addStudio(Studio(6, "Shick"))
-
-
-    studioProducedMovie(5, "Best Movie", 2000, 100, 2000)
-    studioDidntProduceMovie(5, "Best Movie", 2000)
-    studioProducedMovie(1, "Best Movie", 2000, 100, 2000)
-    studioProducedMovie(6, "Ok Movie", 1990, 500, 10)
-
     print('critics:')
     getCritics(printSchema=True)
     print('movies:')
@@ -608,22 +563,5 @@ if __name__ == '__main__':
     print('studios:')
     getStudios(printSchema=True)
     criticRatedMovie("Best Movie", 2000, 1, 5)
-    print("***********************************************************************")
-    Critic = getCriticProfile(1)
-    print(Critic.getName())
-    # conn = Connector.DBConnector()
-    # conn.execute(
-    #     "CREATE TABLE ActorsMovie("
-    #     "actor_id INTEGER,"
-    #     "movie_name TEXT NOT NULL,"
-    #     "movie_year INTEGER,"
-    #     "salary INTEGER NOT NULL,"
-    #     "roles LIST(TEXT NOT NULL)"
-    #     "FOREIGN KEY (actor_id) REFERENCES Actors(id),"
-    #     "FOREIGN KEY (movie_name, movie_year) REFERENCES Movies(name, year))"
-    # )
-    av = averageRating("Best Movie", 2000)
-    print(av)
-    av2 = averageActorRating(8)
-    print(av2)
-    print("***********************************************************************")
+    # Critic = getCriticProfile(1)
+    # print(Critic)
