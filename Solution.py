@@ -660,43 +660,57 @@ def averageRating(movieName: str, movieYear: int) -> float:
         return 0.0
 
 
-def average_helper(actorID: int) -> Utility.DBConnector.ResultSet:
+def createAvOnAvView(actorID: int):
     conn = None
-    # try:
-    conn = Connector.DBConnector()
-    quer_on_view = "select avg(avg_actor) avg_actor, movie_name, movie_year from av_on_av GROUP BY movie_name, movie_year"
-    view_quer = "CREATE VIEW av_on_av AS " \
-                "SELECT AVG(rating) avg_actor, criticsmovie.movie_year, criticsmovie.movie_name from actorsmovie INNER JOIN criticsmovie " \
-                "ON (actorsmovie.movie_year=criticsmovie.movie_year " \
-                "AND actorsmovie.movie_name=criticsmovie.movie_name) " \
-                "GROUP BY criticsmovie.movie_year, criticsmovie.movie_name, actor_id " \
-                "HAVING actor_id={a_id}" \
-        .format(a_id=actorID)
-    conn.execute(sql.SQL(view_quer))  # create the view
-    _, (aver) = conn.execute(sql.SQL(quer_on_view))  # execute on the view
-    dropAvOnAv()
-    return aver
-    # except Exception as e:
-    #     catchException(e, conn)
-    #     return 0.0
-    # finally:
-    #     dropAvOnAv()
+    try:
+        conn = Connector.DBConnector()
+    # quer_on_view = "select avg(avg_actor) avg_actor, movie_name, movie_year from av_on_av GROUP BY movie_name, movie_year"
+        view_quer = "CREATE VIEW av_on_av AS " \
+                    "SELECT AVG(rating) avg_actor, criticsmovie.movie_year, criticsmovie.movie_name from actorsmovie INNER JOIN criticsmovie " \
+                    "ON (actorsmovie.movie_year=criticsmovie.movie_year " \
+                    "AND actorsmovie.movie_name=criticsmovie.movie_name) " \
+                    "GROUP BY criticsmovie.movie_year, criticsmovie.movie_name, actor_id " \
+                    "HAVING actor_id={a_id}" \
+            .format(a_id=actorID)
+        conn.execute(sql.SQL(view_quer))  # create the view
+    # _, (aver) = conn.execute(sql.SQL(quer_on_view))  # execute on the view
+    except Exception as e:
+        catchException(e, conn)
+        return 0.0
+
 
 
 def averageActorRating(actorID: int) -> float:
-    aver = average_helper(actorID)
-    return 0 if aver.isEmpty() else aver.rows[0][0]
+    createAvOnAvView(actorID)
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        quer_on_view = "select avg(avg_actor) avg_actor from av_on_av"
+        _, (aver) = conn.execute(sql.SQL(quer_on_view))# execute on the view
+        return aver.rows[0][0] if aver.rows[0][0] is not None else 0
+    except Exception as e:
+        catchException(e, conn)
+        return 0.0
+    finally:
+        dropAvOnAv()
 
 def bestPerformance(actor_id: int) -> Movie:
-    all_movies = average_helper(actor_id)
-    print(getMovieProfile(all_movies.rows[0][0], all_movies.rows[0][1]))
-    # ret_movie = getMovieProfile()
-    #     return aver.rows[0][0] if aver.rows[0][0] is not None else 0
-    # except Exception as e:
-    #     catchException(e, conn)
-    #     return 0.0
-    # finally:
-    #     dropAvOnAv()
+    createAvOnAvView(actor_id)
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        quer_on_view = "select movie_name, movie_year from av_on_av"
+        _, (aver) = conn.execute(sql.SQL(quer_on_view))  # execute on the view
+
+        all_movies = sorted(aver.rows,key=lambda x: (x[0],x[1]))
+        # print(getMovieProfile(all_movies[0], all_movies[1]))
+
+        return Movie.badMovie() if not aver.rows else getMovieProfile(all_movies[0][0], all_movies[0][1])
+    except Exception as e:
+        catchException(e, conn)
+        return 0.0
+    finally:
+        dropAvOnAv()
 
 
 def stageCrewBudget(movieName: str, movieYear: int) -> int:
