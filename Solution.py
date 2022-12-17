@@ -213,6 +213,16 @@ def dropAvOnAv():
     if conn is not None:
         conn.close()
 
+def drop_sum_sal_view():
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        conn.execute("DROP VIEW IF EXISTS sum_sal_view")
+    except Exception as e:
+        catchException(e, conn)
+    if conn is not None:
+        conn.close()
+
 def dropCritics():
     conn = None
     try:
@@ -713,10 +723,51 @@ def bestPerformance(actor_id: int) -> Movie:
         dropAvOnAv()
 
 
-def stageCrewBudget(movieName: str, movieYear: int) -> int:
-    # TODO: implement
-    pass
+# create view for the case we have movies without actors the coalesce will give the Null value of 0
+def createSumSalView():
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+    # quer_on_view = "select avg(avg_actor) avg_actor, movie_name, movie_year from av_on_av GROUP BY movie_name, movie_year"
+        view_quer = "CREATE VIEW sum_sal_view AS "\
+                    "SELECT coalesce(sum(actorsmovie.salary), 0) sum_sal, movies.year movie_year, movies.movie_name "\
+                    "from movies left JOIN actorsmovie "\
+                    "ON (actorsmovie.movie_year=movies.year "\
+                    "AND actorsmovie.movie_name=movies.movie_name) " \
+                    "GROUP BY movies.year, movies.movie_name"
+        conn.execute(sql.SQL(view_quer))  # create the view
+    # _, (aver) = conn.execute(sql.SQL(quer_on_view))  # execute on the view
+    except Exception as e:
+        catchException(e, conn)
+        return 0.0
 
+
+# we doing right join so if we have movie but not studio we will get not empty answer but the answer will be null inside
+# so if we find empty list we understand the movie not exist (-1)
+# if we find list with value of null inside the movie exist but not inside studio (0)
+def stageCrewBudget(movieName: str, movieYear: int) -> int:
+    createSumSalView()
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+        quer_on_view = "SELECT (budget - sum_sal) from sum_sal_view left JOIN studiosmovie "\
+        "ON (sum_sal_view.movie_year=studiosmovie.movie_year "\
+        "AND sum_sal_view.movie_name=studiosmovie.movie_name) "\
+        "GROUP BY sum_sal_view.movie_year, sum_sal_view.movie_name, studiosmovie.budget, sum_sal_view.sum_sal "\
+        "having sum_sal_view.movie_name='{m_name}' and sum_sal_view.movie_year = {m_year}"\
+        .format(m_name=movieName, m_year=movieYear)
+        _, (dif) = conn.execute(sql.SQL(quer_on_view))  # execute on the view
+        if(not dif.rows):
+            return -1
+        elif(dif.rows[0][0] is None):
+            return 0
+        else:
+            return dif.rows[0][0]
+    except Exception as e:
+        catchException(e, conn)
+        return 0.0
+    finally:
+        drop_sum_sal_view()
 
 def overlyInvestedInMovie(movie_name: str, movie_year: int, actor_id: int) -> bool:
     # TODO: implement
